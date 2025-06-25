@@ -176,6 +176,11 @@ def agregar_restricciones(prob, instancia):
     n14 = [f'continuidad_3_{i}' for i in range(len(a14))]
     prob.linear_constraints.add(lin_expr = a14, sense = s14, rhs = b14, names = n14)
     
+    a15 = [[[j+3*n+2*n**2]+[j+5*n+2*n**2]+[2*n+i*n+j], [-1,-1,n-1]] for i in range(0,n) for j in range(0,n)]
+    b15 = [0 for _ in range(len(a15))]
+    s15 = ['G' for _ in range(len(a15))]
+    n15 = [f'continuidad_4_{i}' for i in range(len(a15))]
+    prob.linear_constraints.add(lin_expr = a15, sense = s15, rhs = b15, names = n15)
     
 def armar_lp(prob, instancia):
 
