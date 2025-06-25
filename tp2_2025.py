@@ -75,7 +75,7 @@ def agregar_variables(prob, instancia):
     # Poner nombre a las variables y llenar coef_funcion_objetivo
     nombres = [f"x_{i}{0}" for i in range(1,n+1)] + [f"x_{0}{j}" for j in range(1,n+1)] + [f"x_{i}{j}" for i in range(1,n+1) for j in range(1,n+1)] + [f"y_{i}{j}" for i in range(1,n+1) for j in range(1,n+1)] + [f"c_{i}" for i in range(1,n+1)] + [f"b_{i}" for i in range(1,n+1)] + [f"D_{i}" for i in range(1,n+1)] + [f"u_{i}" for i in range(1,n+1)]
     coeficientes_funcion_objetivo = [0 for _ in range(0,2*n)] + [instancia.costos[i][j] for i in range(0,n) for j in range(0,n)] + [0 for _ in range(1,n+1) for _ in range(1,n+1)] + [0 for _ in range(1,n+1)] + [instancia.costo_repartidor for _ in range(1,n+1)] + [0 for _ in range(1,n+1)] + [0 for _ in range(1,n+1)] 
-    prob.variables.add(obj = coeficientes_funcion_objetivo, lb = [0 for _ in nombres], ub = [1 for _ in nombres], types = int, names = nombres)
+    prob.variables.add(obj = coeficientes_funcion_objetivo, lb = [0 for _ in nombres], ub = [1 for _ in nombres[:-n]] + [n-1 for _ in range(n)], types = ["I" for _ in nombres], names = nombres)
 
 def agregar_restricciones(prob, instancia):
     # Agregar las restricciones ax <= (>= ==) b:
@@ -164,6 +164,18 @@ def agregar_restricciones(prob, instancia):
     n12 = [f'continuidad_1_{i}' for i in range(len(a12))]
     prob.linear_constraints.add(lin_expr = a12, sense = s12, rhs = b12, names = n12)
     
+    a13 = [[[k+3*n+2*n**2 for k in range(0,n)]+[i+5*n+2*n**2], [1]*(n+1)] for i in range(0,n)] #12b
+    b13 = [n-1 for _ in range(len(a13))]
+    s13 = ['L' for _ in range(len(a13))]
+    n13 = [f'continuidad_2_{i}' for i in range(len(a13))]
+    prob.linear_constraints.add(lin_expr = a13, sense = s13, rhs = b13, names = n13)
+    
+    a14 = [[[i+5*n+2*n**2]+[j+5*n+2*n**2]+[2*n+i*n+j], [1,-1,n-1]] for i in range(0,n) for j in range(0,n)]
+    b14 = [n-1 for _ in range(len(a14))]
+    s14 = ['L' for _ in range(len(a14))]
+    n14 = [f'continuidad_3_{i}' for i in range(len(a14))]
+    prob.linear_constraints.add(lin_expr = a14, sense = s14, rhs = b14, names = n14)
+    
     
 def armar_lp(prob, instancia):
 
@@ -182,7 +194,9 @@ def armar_lp(prob, instancia):
 def resolver_lp(prob):
     
     # Definir los parametros del solver
-    #prob.parameters.mip.....
+    prob.parameters.mip.strategy.heuristicfreq.set(1)
+    prob.parameters.preprocessing.presolve.set(1)
+    prob.parameters.mip.strategy.branch.set(-1)
        
     # Resolver el lp
     prob.solve()
