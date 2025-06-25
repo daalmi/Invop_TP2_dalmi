@@ -70,7 +70,6 @@ def agregar_variables(prob, instancia):
     # ub: cotas superiores
     # types: tipo de las variables
     # names: nombre (como van a aparecer en el archivo .lp)
-	
     n = instancia.cantidad_clientes
     
     # Poner nombre a las variables y llenar coef_funcion_objetivo
@@ -93,16 +92,67 @@ def agregar_restricciones(prob, instancia):
     n = instancia.cantidad_clientes
     nombres = prob.variables.get_names()
     
-    [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"x_{i}"]+[i+2*n**2-1], [1]*n+[-1]] for i in range(1,n+1)] #3, otra manera: [[[j+n*i for j in range(0,n)]+[i+2*n**2], [1]*n+[-1]] for i in range(0,n)] 
-    [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"x_" and nombres[i][-1] == f"{j}"]+[j+2*n**2-1], [1]*n+[-1]] for j in range(1,n+1)] #4, otra manera: [[[j+n*i for i in range(0,n)]+[j+2*n**2], [1]*n+[-1]] for j in range(0,n)] 
-    [[[i+2*n**2-1],[1]] for i in instancia.exclusivos] #5
-    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n+1) for j in range(1,n+1)] #6, otra manera: [[[k], [1]] for k in range(n**2,2*n**2)] 
-    [[[i+2*n**2-1,i+n+2*n**2-1], [1,1]] for i in range(1,n+1)] #7
-    [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"y_" and nombres[i][-1] == f"{j}"], [1]*n] for j in range(1,n+1)] #8, otra manera: [[[j+i*n+n**2 for i in range(0,n)], [1]*n] for j in range(0,n)]
-    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [instancia.distancias[i][j]]] for i in range(1,n+1) for j in range(1,n+1)] #9, otra manera: [[[k], [1]] for k in range(n**2,2*n**2)] y paso dividiendo dij
-    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n+1) for j in range(1,n+1)] #10, otra manera: [[[k,k+n**2+2*n], [1,-1]] for k in range(n**2,2*n**2)]
-    [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"y_{i}"], [1]*n] for i in range(1,n+1)] #11, otra manera: [[[j+i*n+n**2 for j in range(0,n)], [1]*n] for i in range(0,n)]
-    [[[i+n+2*n**2,i+3*n+2*n**2], [1,1]] for i in range(1,n+1)] #12a 
+    a3 = [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"x_{i}"]+[i+2*n**2-1], [1]*n+[-1]] for i in range(1,n+1)] #3, otra manera: [[[j+n*i for j in range(0,n)]+[i+2*n**2], [1]*n+[-1]] for i in range(0,n)] 
+    b3 = [0 for _ in range(len(a3))]
+    s3 = ['E' for _ in range(len(a3))]
+    n3 = [f'salgo_camion_{i}' for i in range(len(a3))]
+    prob.linear_constraints.add(lin_expr = a3, sense = s3, rhs = b3, names = n3)
+
+    a4 = [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"x_" and nombres[i][-1] == f"{j}"]+[j+2*n**2-1], [1]*n+[-1]] for j in range(1,n+1)] #4, otra manera: [[[j+n*i for i in range(0,n)]+[j+2*n**2], [1]*n+[-1]] for j in range(0,n)] 
+    n4 = [f'entro_camion_{i}' for i in range(len(a4))]
+    prob.linear_constraints.add(lin_expr = a4, sense = s3, rhs = b3, names = n4)
+    
+    a5 = [[[i+2*n**2-1], [1]] for i in instancia.exclusivos] #5
+    b5 = [1 for _ in range(len(a5))]
+    s5 = ['G' for _ in range(len(a5))]
+    n5 = [f'prioridad_{i}' for i in range(len(a5))]
+    prob.linear_constraints.add(lin_expr = a5, sense = s5, rhs = b5, names = n5)
+    
+    a6 = [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n+1) for j in range(1,n+1)] #6, otra manera: [[[k+n**2,int(k/n)+2*n**2], [1,-1]] for k in range(0,n**2)] #6
+    # Faltan agregar los x_i a la izquierda, con el comentario resolvemos eso
+    b6 = [1 for _ in range(len(a6))]
+    s6 = ['L' for _ in range(len(a6))]
+    n6 = [f'pasa_bici_paso_bondi{i}' for i in range(len(a6))]
+    prob.linear_constraints.add(lin_expr = a6, sense = s6, rhs = b6, names = n6)
+    
+    a7 = [[[i+2*n**2-1,i+n+2*n**2-1], [1,1]] for i in range(1,n+1)] #7
+    b7 = [1 for _ in range(len(a7))]
+    s7 = ['E' for _ in range(len(a7))]
+    n7 = [f'camion_bici_{i}' for i in range(len(a7))]
+    prob.linear_constraints.add(lin_expr = a7, sense = s7, rhs = b7, names = n7)
+    
+    a8 = [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"y_" and nombres[i][-1] == f"{j}"]+[2*n**2+n+j-1], [1]*n+[-1]] for j in range(1,n+1)] #8, otra manera: [[[i*n+n**2+j for i in range(0,n)]+[2*n**2+n+j], [1]*n+[-1]] for j in range(0,n)]
+    b8 = [0 for _ in range(len(a8))]
+    s8 = ['E' for _ in range(len(a8))]
+    n8 = [f'llego_bici_salio_bici{i}' for i in range(len(a8))]
+    prob.linear_constraints.add(lin_expr = a8, sense = s8, rhs = b8, names = n8)
+    
+    a9 = [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [instancia.distancias[i][j]]] for i in range(1,n+1) for j in range(1,n+1)] #9, otra manera: [[[k], [1]] for k in range(n**2,2*n**2)] y paso dividiendo dij
+    b9 = [instancia.d_max for _ in range(len(a9))]
+    s9 = ['L' for _ in range(len(a9))]
+    n9 = [f'respeto_dmax-{i}' for i in range(len(a9))]
+    prob.linear_constraints.add(lin_expr = a9, sense = s9, rhs = b9, names = n9)
+    
+    a10 = [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n+1) for j in range(1,n+1)] #10, otra manera: [[[k,int(k/n)+2*n**2+n], [1,-1]] for k in range(n**2,2*n**2)]
+    # Faltan agregar los d_i a la izquierda, con el comentario resolvemos eso 
+    b10 = [0 for _ in range(len(a10))]
+    s10 = ['L' for _ in range(len(a10))]
+    n10 = [f'salgo_bici_{i}' for i in range(len(a10))]
+    prob.linear_constraints.add(lin_expr = a10, sense = s10, rhs = b10, names = n10)
+    
+    a11 = [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"y_{i}"], [1]*n] for i in range(1,n+1)] #11, otra manera: [[[i*n+n**2+j for j in range(0,n)]+[2*n**2+2*n+i], [1]*n+[-4]] for i in range(0,n)]
+    # Faltan agregar los d_i a la izquierda, con el comentario resolvemos eso 
+    b11 = [0 for _ in range(len(a11))]
+    s11 = ['G' for _ in range(len(a11))]
+    n11 = [f'uso_bici_4_veces{i}' for i in range(len(a11))]
+    prob.linear_constraints.add(lin_expr = a11, sense = s11, rhs = b11, names = n11)
+    
+    
+    a12 = [[[i+n+2*n**2,i+3*n+2*n**2], [1,1]] for i in range(0,n)] #12a 
+    b12 = [1 for _ in range(len(a12))]
+    s12 = ['G' for _ in range(len(a12))]
+    n12 = [f'continuidad_1_{i}' for i in range(len(a12))]
+    prob.linear_constraints.add(lin_expr = a12, sense = s12, rhs = b12, names = n12)
     
     
 def armar_lp(prob, instancia):
