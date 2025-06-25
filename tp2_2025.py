@@ -91,18 +91,18 @@ def agregar_restricciones(prob, instancia):
     # agreguemos una unica restriccion, tenemos que hacerlo como una lista de un unico
     # elemento.
     n = instancia.cantidad_clientes
-    nombres = instancia.variables.names
+    nombres = prob.variables.get_names()
     
-    [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"x_{i}"], [1]*n] for i in range(1,n)] #3
-    [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"x_" and nombres[i][-1] == f"{j}"], [1]*n] for j in range(1,n)] #4
-    [[[i+2*n**2],[1]] for i in instancia.exclusivos] #5
-    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n) for j in range(1,n)] #6
-    [[[i+2*n**2,i+n+2*n**2], [1,1]] for i in range(1,n)] #7
-    [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"y_" and nombres[i][-1] == f"{j}"], [1]*n] for j in range(1,n)] #8
-    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [instancia.distancias[i][j]]] for i in range(1,n) for j in range(1,n)] #9
-    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n) for j in range(1,n)] #10
-    [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"y_{i}"], [1]*n] for i in range(1,n)] #11
-    [[[i+n+2*n**2,i+3*n+2*n**2], [1,1]] for i in range(1,n)] #12a 
+    [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"x_{i}"]+[i+2*n**2-1], [1]*n+[-1]] for i in range(1,n+1)] #3, otra manera: [[[j+n*i for j in range(0,n)]+[i+2*n**2], [1]*n+[-1]] for i in range(0,n)] 
+    [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"x_" and nombres[i][-1] == f"{j}"]+[j+2*n**2-1], [1]*n+[-1]] for j in range(1,n+1)] #4, otra manera: [[[j+n*i for i in range(0,n)]+[j+2*n**2], [1]*n+[-1]] for j in range(0,n)] 
+    [[[i+2*n**2-1],[1]] for i in instancia.exclusivos] #5
+    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n+1) for j in range(1,n+1)] #6, otra manera: [[[k], [1]] for k in range(n**2,2*n**2)] 
+    [[[i+2*n**2-1,i+n+2*n**2-1], [1,1]] for i in range(1,n+1)] #7
+    [[[i for i in range(len(nombres)) if nombres[i][0:2] == f"y_" and nombres[i][-1] == f"{j}"], [1]*n] for j in range(1,n+1)] #8, otra manera: [[[j+i*n+n**2 for i in range(0,n)], [1]*n] for j in range(0,n)]
+    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [instancia.distancias[i][j]]] for i in range(1,n+1) for j in range(1,n+1)] #9, otra manera: [[[k], [1]] for k in range(n**2,2*n**2)] y paso dividiendo dij
+    [[[k for k in range(len(nombres)) if nombres[k][0:4] == f"y_{i}{j}"], [1]] for i in range(1,n+1) for j in range(1,n+1)] #10, otra manera: [[[k,k+n**2+2*n], [1,-1]] for k in range(n**2,2*n**2)]
+    [[[j for j in range(len(nombres)) if nombres[j][0:3] == f"y_{i}"], [1]*n] for i in range(1,n+1)] #11, otra manera: [[[j+i*n+n**2 for j in range(0,n)], [1]*n] for i in range(0,n)]
+    [[[i+n+2*n**2,i+3*n+2*n**2], [1,1]] for i in range(1,n+1)] #12a 
     
     
 def armar_lp(prob, instancia):
@@ -143,7 +143,9 @@ def mostrar_solucion(prob,instancia):
     x  = prob.solution.get_values()
 
     # Mostrar las variables con valor positivo (mayor que una tolerancia)
-    ..... 
+    for i in range(len(x)):
+        if x[i] > TOLERANCE:
+            print(prob.variables.get_names()[i] + ":", x[i])
 
 def main():
     
